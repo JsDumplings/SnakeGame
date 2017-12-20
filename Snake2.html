@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>Snake2</title>
+	<style type="text/css">
+		canvas{
+			display: block;
+			margin: 0 auto;
+			outline: 1px solid;
+		}
+		div{
+			position: absolute;
+			left:25%;
+			top:10%;
+		}
+	</style>
+</head>
+<body>
+	<canvas width="400" height="400"></canvas>
+	<div>
+		<p>Score:<span>0</span></p>
+		<button>开始游戏</button>
+	</div>
+	
+</body>
+</html>
+<script type="text/javascript">
+	//全局变量定义
+	var bg=document.getElementsByTagName("canvas")[0];
+	var btn=document.getElementsByTagName("button")[0];
+	var span=document.getElementsByTagName("span")[0];
+	var cxt=bg.getContext("2d");
+	var w=bg.width;
+	var h=bg.height;
+	var speed;
+	var TopArr=new Array();         //定义蛇头数组
+	var direction;                  //定义方向
+	var x=0,y=0;
+	var m,n;
+	var score;
+	var ht=true;
+
+	//键盘控制
+	document.onkeydown=function(event){
+		var e=event||window.event||arguments.callee.caller.arguments[0];
+		//判断方向，当与上次方向相反时，移动方向不改变
+		if(direction+2!=e.keyCode &&direction-2!=e.keyCode){
+			direction=e.keyCode;   //获取键盘控制
+	    }
+	};
+
+	//初始化
+	function init(){
+		w=bg.width;
+		cxt.translate(w/2,h/2);
+		speed=10;
+		score=0;
+		direction="";
+		m=0;n=0;
+		TopArr.splice(0,TopArr.length); //初始化数组（清空）
+		TopArr.push([0,0]);   //蛇头初始
+		TopSnake();           //画蛇头
+		Food();               //初始随机食物
+	}
+	//在画布中画出开始提示玩法
+	function PlayWay(){
+		cxt.beginPath();
+		cxt.font="15px Georgia";
+		cxt.fillText("点击开始游戏按钮开始游戏，用键盘↑↓←→来控制方向！",20,50);
+		cxt.fill();
+	}
+	//游戏结束出现画面
+	function GameOver(){
+		cxt.closePath();
+		cxt.beginPath();
+		cxt.font="25px Georgia";
+		cxt.fillText("游戏结束！",0,0);
+		cxt.closePath();
+		cxt.beginPath();
+		cxt.font="25px Georgia";
+		cxt.fillText("您的得分为："+span.innerHTML+"",0,50);
+		cxt.fill();
+		cxt.closePath();
+	}
+	//画一个蛇头
+	function TopSnake(){
+		cxt.beginPath();
+		cxt.fillStyle="red";
+		cxt.fillRect(TopArr[0][0],TopArr[0][1],10,10);
+		console.log(TopArr[0][0],TopArr[0][1]);
+		cxt.fill();
+	}
+
+	//蛇头的移动
+	function TopMove(){
+		//清除上一次蛇头的绘图
+		    cxt.clearRect(TopArr[0][0],TopArr[0][1],10,10);
+		//键盘控制移动
+		switch(direction){
+			case 37:x=x-speed;break;
+			case 38:y=y-speed;break;
+			case 39:x=x+speed;break;
+			case 40:y=y+speed;break;
+			default:console.log("请按键盘↑↓←→来开始游戏！");
+		}
+		
+		//如果蛇头坐标跟食物坐标相同，那么将食物坐标加入数组
+		if(x==m&&y==n){
+			TopArr.push([m,n]);       //添加入数组最后一项
+			Food();
+			score=score+1;
+		}else{
+			TopArr.pop();             //删除数组最后一项
+		}
+		span.innerHTML=score;
+		//当数组长度>1时，画出蛇的身体
+		if(TopArr.length>1){
+			cxt.closePath();
+			cxt.beginPath();
+			cxt.fillStyle="black";
+			for(let i=0;i<TopArr.length;i++){
+				//遍历画出身体
+				cxt.fillRect(TopArr[i][0],TopArr[i][1],10,10);
+			}
+			for(let i=1;i<TopArr.length;i++){
+				//如果碰到自己的身体，则死亡
+				if(TopArr[0][0]==TopArr[i][0] &&TopArr[0][1]==TopArr[i][1]){
+					clearInterval(window.set);
+					cxt.clearRect(-w/2,-h/2,w,h);
+					GameOver();
+				}
+			}
+			//清除身体的最后一个
+			if(TopArr.length>0){
+				cxt.clearRect(TopArr[TopArr.length-1][0],TopArr[TopArr.length-1][1],10,10);
+				cxt.fill();
+		    }
+	    }
+	    //新蛇头坐标加入数组第一位,并且重绘
+		TopArr.unshift([x,y]);
+		cxt.closePath();
+		cxt.beginPath();
+		cxt.fillStyle="red";
+		cxt.fillRect(TopArr[0][0],TopArr[0][1],10,10);
+		cxt.fill();
+
+		//如果碰到四周墙壁，则死亡
+		if(x<-w/2||x>w/2-10||y<-h/2||y>h/2-10){
+	       	clearInterval(window.set);
+	       	cxt.clearRect(-w,-h,w,h);
+	       	GameOver();
+        }
+	}
+
+	//随机生成食物
+    function Food(){
+	    //随机生成食物坐标,判断随机生成的食物坐标不能在蛇的身体上
+	    do{
+	    	var stat=false;
+		    m=w/2-Math.ceil(Math.random()*10)*10*Math.round(Math.random()*4);  //0-200的整十数
+	        n=h/2-Math.ceil(Math.random()*10)*10*Math.round(Math.random()*4);
+	        for(let i=0;i<TopArr.length;i++){
+	        	if(m==TopArr[i][0]&&n==TopArr[i][1]){
+	        		stat=true;
+	        	}
+	        }
+        }while(m==200||n==200||stat==true)
+
+	    cxt.fillStyle="blue";
+	    cxt.fillRect(m,n,10,10);
+	    //console.log(m,n);
+	    cxt.fill();
+    }
+    PlayWay();
+	btn.onclick=function(){
+		ht=!ht;
+		if(ht){
+			btn.innerHTML="开始游戏";
+			window.location.reload();
+		}else{
+			btn.innerHTML="重新开始";
+			cxt.clearRect(0,0,w,h);
+		    init();
+		    window.set=setInterval("TopMove()",100);           //蛇头移动
+		}
+	}
+</script>
